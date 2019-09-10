@@ -46,5 +46,9 @@ matrix:
 
 before_install:
     - eval "${MATRIX_EVAL}"
+language: python
+python:
+  - "3.6"
+sudo: required
 script: 
   - py.test
