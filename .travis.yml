@@ -52,6 +52,7 @@ python:
 sudo: required
 install:
   - pip install pytest coverage
+before script:
+  - export PYTHONPATH=$PYTHONPATH:$(pwd)
 script:
-  - export PYTHONPATH=$PYTHONPATH:./ 
   - py.test
