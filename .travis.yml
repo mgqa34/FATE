@@ -51,7 +51,7 @@ python:
   - "3.6"
 sudo: required
 install:
-  - pip install -r requirement.txt
+  - pip install -r requirements.txt
   - pip install pytest pytest-cov coverage
 before script:
   - export PYTHONPATH=$PYTHONPATH:$(pwd)
