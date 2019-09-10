@@ -1,10 +1,10 @@
 env:
   - OS_TYPE=centos OS_VERSION=7
 language: python
+compiler:
+  - gcc
 python:
   - "3.6"
 sudo: required
-install:
-  - sudo yum install gcc
 script: 
   - py.test
