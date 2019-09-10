@@ -54,6 +54,7 @@ before_install:
     - ../configure --prefix=$(pwd)/..
     - make -j12
     - sudo make install
+    - cd ~/
 language: python
 python:
   - "3.6"
