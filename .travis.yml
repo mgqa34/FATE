@@ -4,5 +4,7 @@ language: python
 python:
   - "3.6"
 sudo: required
+install:
+  - yum install gcc
 script: 
   - py.test
