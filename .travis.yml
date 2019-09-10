@@ -72,10 +72,8 @@ install:
       pip install dist/gmpy2-*.tar.gz
     fi
     pip install sphinx
-sudo: required
-install:
-  - cat requirements.txt | xargs -n 1 pip install
-  - pip install pytest pytest-cov coverage
+    cat requirements.txt | xargs -n 1 pip install
+    pip install pytest pytest-cov coverage
 before script:
   - export PYTHONPATH=$PYTHONPATH:$(pwd)
 script:
