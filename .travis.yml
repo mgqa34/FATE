@@ -46,9 +46,11 @@ matrix:
 
 before_install:
     - eval "${MATRIX_EVAL}"
-language: python
 python:
   - "3.6"
 sudo: required
+install:
+  - pip install pytest
+  - pip install coverage
 script: 
   - py.test
