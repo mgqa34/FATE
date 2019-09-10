@@ -1,6 +1,7 @@
 env:
   - OS_TYPE=centos OS_VERSION=7
 
+sudo: required
 install:
   - wget https://www.mpfr.org/mpfr-4.0.1/mpfr-4.0.1.zip
   - unzip mpfr-4.0.1.zip
@@ -14,6 +15,5 @@ compiler:
   - gcc
 python:
   - "3.6"
-sudo: required
 script: 
   - py.test
