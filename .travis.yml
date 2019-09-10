@@ -5,6 +5,6 @@ python:
   - "3.6"
 sudo: required
 install:
-  - yum install gcc
+  - sudo yum install gcc
 script: 
   - py.test
