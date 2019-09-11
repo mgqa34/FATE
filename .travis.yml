@@ -38,6 +38,9 @@ install:
     pip install pytest pytest-cov coverage
     pip install sphinx
 before script:
-  - export PYTHONPATH=$PYTHONPATH:$(pwd)
+  - export PYTHONPATH=$PYTHONPATH:$HOME
 script:
-  - py.test --cov=./
+  - coverage run --source=./ -m unittest discover -s ./ -p '*_test.py'
+
+after script:
+  - codecov
