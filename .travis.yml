@@ -42,5 +42,3 @@ before script:
   - export PYTHONPATH=$PYTHONPATH:$HOME
 script:
   - nosetests --with-coverage -w federatedml -m="*_test.py"
-after script:
-  - codecov
