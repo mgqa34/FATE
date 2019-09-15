@@ -36,11 +36,11 @@ install:
     pip install dist/gmpy2-*.tar.gz
     cat requirements.txt | xargs -n 1 pip install
     pip install pytest pytest-cov coverage
+    pip install nose
     pip install sphinx
 before script:
   - export PYTHONPATH=$PYTHONPATH:$HOME
 script:
-  - coverage run --source=./ -m unittest discover -s ./ -p '*_test.py'
-
+  - nosetests --with-coverage -w federatedml
 after script:
   - codecov
