@@ -41,4 +41,4 @@ install:
 before script:
   - export PYTHONPATH=$PYTHONPATH:$HOME
 script:
-  - nosetests --with-coverage -w federatedml -m="*_test.py"
+  - nosetests --with-coverage -w federatedml -m="(?:\b|_)test.py"
