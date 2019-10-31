@@ -22,7 +22,6 @@ import tarfile
 from flask import Flask, request, send_file
 from google.protobuf import json_format
 
-from arch.api import storage
 from arch.api.utils.core import deserialize_b64
 from arch.api.utils.core import get_fate_uuid
 from arch.api.utils.core import json_loads
@@ -99,26 +98,6 @@ def component_metrics():
         return get_json_result(retcode=0, retmsg='no data', data={})
 
 
-@manager.route('/<job_id>/<component_name>/<task_id>/<role>/<party_id>/metric_data/save', methods=['POST'])
-def save_metric_data(job_id, component_name, task_id, role, party_id):
-    request_data = request.json
-    tracker = Tracking(job_id=job_id, component_name=component_name, task_id=task_id, role=role, party_id=party_id)
-    metrics = [deserialize_b64(metric) for metric in request_data['metrics']]
-    tracker.save_metric_data(metric_namespace=request_data['metric_namespace'], metric_name=request_data['metric_name'],
-                             metrics=metrics, job_level=request_data['job_level'])
-    return get_json_result()
-
-
-@manager.route('/<job_id>/<component_name>/<task_id>/<role>/<party_id>/metric_meta/save', methods=['POST'])
-def save_metric_meta(job_id, component_name, task_id, role, party_id):
-    request_data = request.json
-    tracker = Tracking(job_id=job_id, component_name=component_name, task_id=task_id, role=role, party_id=party_id)
-    metric_meta = deserialize_b64(request_data['metric_meta'])
-    tracker.save_metric_meta(metric_namespace=request_data['metric_namespace'], metric_name=request_data['metric_name'],
-                             metric_meta=metric_meta, job_level=request_data['job_level'])
-    return get_json_result()
-
-
 @manager.route('/component/metric_data', methods=['post'])
 def component_metric_data():
     request_data = request.json
@@ -159,7 +138,7 @@ def component_parameters():
         for role, partys_parameters in parameters.items():
             for party_parameters in partys_parameters:
                 if party_parameters.get('local', {}).get('role', '') == request_data['role'] and party_parameters.get(
-                        'local', {}).get('party_id', '') == request_data['party_id']:
+                        'local', {}).get('party_id', '') == int(request_data['party_id']):
                     output_parameters = {}
                     output_parameters['module'] = party_parameters.get('module', '')
                     for p_k, p_v in party_parameters.items():
@@ -173,6 +152,7 @@ def component_parameters():
 
 
 @manager.route('/component/output/model', methods=['post'])
+@job_utils.job_server_routing()
 def component_output_model():
     request_data = request.json
     check_request_parameters(request_data)
@@ -188,12 +168,11 @@ def component_output_model():
                                        train_runtime_conf=train_runtime_conf)
     component = dag.get_component_info(request_data['component_name'])
     output_model_json = {}
-    if component.get_output().get('model', []):
-        # There is only one model output at the current dsl version.
-        output_model = tracker.get_output_model(component.get_output()['model'][0])
-        for buffer_name, buffer_object in output_model.items():
-            if buffer_name.endswith('Param'):
-                output_model_json = json_format.MessageToDict(buffer_object, including_default_value_fields=True)
+    # There is only one model output at the current dsl version.
+    output_model = tracker.get_output_model(component.get_output()['model'][0] if component.get_output().get('model') else 'default')
+    for buffer_name, buffer_object in output_model.items():
+        if buffer_name.endswith('Param'):
+            output_model_json = json_format.MessageToDict(buffer_object, including_default_value_fields=True)
     if output_model_json:
         pipeline_output_model = tracker.get_output_model_meta()
         this_component_model_meta = {}
@@ -211,6 +190,7 @@ def component_output_model():
 
 
 @manager.route('/component/output/data', methods=['post'])
+@job_utils.job_server_routing()
 def component_output_data():
     request_data = request.json
     output_data_table = get_component_output_data_table(task_data=request_data)
@@ -234,6 +214,7 @@ def component_output_data():
 
 
 @manager.route('/component/output/data/download', methods=['get'])
+@job_utils.job_server_routing(307)
 def component_output_data_download():
     request_data = request.json
     output_data_table = get_component_output_data_table(task_data=request_data)
@@ -276,6 +257,26 @@ def component_output_data_download():
                                                                     request_data['role'], request_data['party_id'])
         return send_file(memory_file, attachment_filename=tar_file_name, as_attachment=True)
 
+# api using by task executor
+@manager.route('/<job_id>/<component_name>/<task_id>/<role>/<party_id>/metric_data/save', methods=['POST'])
+def save_metric_data(job_id, component_name, task_id, role, party_id):
+    request_data = request.json
+    tracker = Tracking(job_id=job_id, component_name=component_name, task_id=task_id, role=role, party_id=party_id)
+    metrics = [deserialize_b64(metric) for metric in request_data['metrics']]
+    tracker.save_metric_data(metric_namespace=request_data['metric_namespace'], metric_name=request_data['metric_name'],
+                             metrics=metrics, job_level=request_data['job_level'])
+    return get_json_result()
+
+
+@manager.route('/<job_id>/<component_name>/<task_id>/<role>/<party_id>/metric_meta/save', methods=['POST'])
+def save_metric_meta(job_id, component_name, task_id, role, party_id):
+    request_data = request.json
+    tracker = Tracking(job_id=job_id, component_name=component_name, task_id=task_id, role=role, party_id=party_id)
+    metric_meta = deserialize_b64(request_data['metric_meta'])
+    tracker.save_metric_meta(metric_namespace=request_data['metric_namespace'], metric_name=request_data['metric_name'],
+                             metric_meta=metric_meta, job_level=request_data['job_level'])
+    return get_json_result()
+
 
 def get_component_output_data_table(task_data):
     check_request_parameters(task_data)
@@ -289,10 +290,8 @@ def get_component_output_data_table(task_data):
         raise Exception('can found component')
     output_dsl = component.get_output()
     output_data_dsl = output_dsl.get('data', [])
-    if not output_data_dsl:
-        return None
     # The current version will only have one data output.
-    output_data_table = tracker.get_output_data_table(output_data_dsl[0])
+    output_data_table = tracker.get_output_data_table(output_data_dsl[0] if output_data_dsl else 'component')
     return output_data_table
 
 
@@ -311,7 +310,7 @@ def get_component_output_data_line(src_key, src_value):
 
 def get_component_output_data_meta(output_data_table, have_data_label):
     # get meta
-    output_data_meta = storage.get_data_table_metas_by_instance(output_data_table)
+    output_data_meta = output_data_table.get_metas()
     schema = output_data_meta.get('schema', {})
     header = [schema.get('sid_name', 'sid')]
     if have_data_label:

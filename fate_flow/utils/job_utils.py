@@ -14,6 +14,7 @@
 #  limitations under the License.
 #
 import datetime
+import functools
 import errno
 import json
 import operator
@@ -28,11 +29,14 @@ import psutil
 from arch.api.utils import file_utils
 from arch.api.utils.core import current_timestamp
 from arch.api.utils.core import json_loads, json_dumps
+from arch.api.utils.log_utils import schedule_logger
 from fate_flow.db.db_models import DB, Job, Task
 from fate_flow.driver.dsl_parser import DSLParser
 from fate_flow.entity.runtime_config import RuntimeConfig
-from fate_flow.settings import stat_logger, WORK_MODE
+from fate_flow.settings import stat_logger
 from fate_flow.utils import detect_utils
+from fate_flow.utils import api_utils
+from flask import request, redirect, url_for
 
 
 class IdCounter:
@@ -80,7 +84,7 @@ def check_config(config: typing.Dict, required_parameters: typing.List):
 def check_pipeline_job_runtime_conf(runtime_conf: typing.Dict):
     detect_utils.check_config(runtime_conf, ['initiator', 'job_parameters', 'role'])
     detect_utils.check_config(runtime_conf['initiator'], ['role', 'party_id'])
-    detect_utils.check_config(runtime_conf['job_parameters'], [('work_mode', WORK_MODE)])
+    detect_utils.check_config(runtime_conf['job_parameters'], [('work_mode', RuntimeConfig.WORK_MODE)])
     # deal party id
     runtime_conf['initiator']['party_id'] = int(runtime_conf['initiator']['party_id'])
     for r in runtime_conf['role'].keys():
@@ -97,22 +101,38 @@ def new_runtime_conf(job_dir, method, module, role, party_id):
     return os.path.join(conf_path_dir, 'runtime_conf.json')
 
 
-def save_job_conf(job_id, job_dsl, job_runtime_conf):
-    job_dsl_path, job_runtime_conf_path = get_job_conf_path(job_id=job_id)
-    os.makedirs(os.path.dirname(job_dsl_path), exist_ok=True)
-    for data, conf_path in [(job_dsl, job_dsl_path), (job_runtime_conf, job_runtime_conf_path)]:
+def save_job_conf(job_id, job_dsl, job_runtime_conf, train_runtime_conf, pipeline_dsl):
+    path_dict = get_job_conf_path(job_id=job_id)
+    os.makedirs(os.path.dirname(path_dict.get('job_dsl_path')), exist_ok=True)
+    for data, conf_path in [(job_dsl, path_dict['job_dsl_path']), (job_runtime_conf, path_dict['job_runtime_conf_path']),
+                            (train_runtime_conf, path_dict['train_runtime_conf_path']), (pipeline_dsl, path_dict['pipeline_dsl_path'])]:
         with open(conf_path, 'w+') as f:
             f.truncate()
+            if not data:
+                data = {}
             f.write(json.dumps(data, indent=4))
             f.flush()
-    return job_dsl_path, job_runtime_conf_path
+    return path_dict
 
 
 def get_job_conf_path(job_id):
     job_dir = get_job_directory(job_id)
     job_dsl_path = os.path.join(job_dir, 'job_dsl.json')
     job_runtime_conf_path = os.path.join(job_dir, 'job_runtime_conf.json')
-    return job_dsl_path, job_runtime_conf_path
+    train_runtime_conf_path = os.path.join(job_dir, 'train_runtime_conf.json')
+    pipeline_dsl_path = os.path.join(job_dir, 'pipeline_dsl.json')
+    return {'job_dsl_path': job_dsl_path,
+            'job_runtime_conf_path': job_runtime_conf_path,
+            'train_runtime_conf_path': train_runtime_conf_path,
+            'pipeline_dsl_path': pipeline_dsl_path}
+
+
+def get_job_conf(job_id):
+    conf_dict = {}
+    for key, path in get_job_conf_path(job_id).items():
+        config = file_utils.load_json_conf(path)
+        conf_dict[key] = config
+    return conf_dict
 
 
 def get_job_dsl_parser_by_job_id(job_id):
@@ -207,7 +227,8 @@ def success_task_count(job_id):
 
 
 def update_job_progress(job_id, dag, current_task_id):
-    component_count = len(dag.get_dependency()['component_list'])
+    role, party_id = query_job_info(job_id)
+    component_count = len(dag.get_dependency(role=role, party_id=int(party_id))['component_list'])
     success_count = success_task_count(job_id=job_id)
     job = Job()
     job.f_progress = float(success_count) / component_count * 100
@@ -337,3 +358,67 @@ def gen_all_party_key(all_party):
     else:
         all_party_key = None
     return all_party_key
+
+
+def job_server_routing(routing_type=0):
+    def _out_wrapper(func):
+        @functools.wraps(func)
+        def _wrapper(*args, **kwargs):
+            job_server = set()
+            jobs = query_job(job_id=request.json.get('job_id', None))
+            for job in jobs:
+                if job.f_run_ip:
+                    job_server.add(job.f_run_ip)
+            if len(job_server) == 1:
+                execute_host = job_server.pop()
+                if execute_host != RuntimeConfig.JOB_SERVER_HOST:
+                    if routing_type == 0:
+                        return api_utils.request_execute_server(request=request, execute_host=execute_host)
+                    else:
+                        return redirect('http://{}{}'.format(execute_host, url_for(request.endpoint)), code=307)
+            return func(*args, **kwargs)
+        return _wrapper
+    return _out_wrapper
+
+
+def get_timeout(job_id, timeout, runtime_conf, dsl):
+    try:
+        if timeout > 0:
+            schedule_logger(job_id).info('setting job {} timeout {}'.format(job_id, timeout))
+            return timeout
+        else:
+            default_timeout = job_default_timeout(runtime_conf, dsl)
+            schedule_logger(job_id).info('setting job {} timeout {} not a positive number, using the default timeout {}'.format(
+                job_id, timeout, default_timeout))
+            return default_timeout
+    except:
+        default_timeout = job_default_timeout(runtime_conf, dsl)
+        schedule_logger(job_id).info('setting job {} timeout {} is incorrect, using the default timeout {}'.format(
+            job_id, timeout, default_timeout))
+        return default_timeout
+
+
+def job_default_timeout(runtime_conf, dsl):
+    # future versions will improve
+    timeout = 60*60*24*7
+    return timeout
+
+
+def job_event(job_id, initiator_role,  initiator_party_id):
+    event = {'job_id': job_id,
+             "initiator_role": initiator_role,
+             "initiator_party_id": initiator_party_id
+             }
+    return event
+
+
+def query_job_info(job_id):
+    jobs = query_job(job_id=job_id, is_initiator=1)
+    party_id = None
+    role = None
+    if jobs:
+        job = jobs[0]
+        role = job.f_role
+        party_id = job.f_party_id
+    return role, party_id
+
