@@ -1,9 +1,16 @@
 FROM mcr.microsoft.com/java/jre:8u192-zulu-alpine
 
-RUN mkdir -p /data/projects/fate
-COPY . /data/projects/fate/federation
+WORKDIR /data/projects/fate/federation/
+
+ARG version
+
+COPY fate-federation-${version}.tar.gz ./
+COPY conf ./conf
+
+RUN tar -xzf fate-federation-${version}.tar.gz && \
+    rm fate-federation-${version}.tar.gz && \
+    ln -s fate-federation-*.jar fate-federation.jar
 EXPOSE 9394
 
-CMD cd /data/projects/fate/federation && \
-    java -cp "conf/:lib/*:fate-federation.jar" com.webank.ai.fate.driver.Federation -c conf/federation.properties
+CMD java -cp "conf/:lib/*:fate-federation.jar" com.webank.ai.fate.driver.Federation -c conf/federation.properties
 

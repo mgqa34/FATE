@@ -2,7 +2,7 @@
 
 In this document, it describes how to develop an algorithm module, which can be callable under the architecture of FATE.
 
-To develop a module, the following 5 steps will be needed.
+To develop a module, the following 5 steps are needed.
 
 1. define the python parameter object which will be used in this module.
 
@@ -23,7 +23,7 @@ Parameter object is the only way to pass user-define runtime parameters to the d
 In order to define a usable parameter object, three steps will be needed.
 
 a. Open a new python file, rename it as xxx_param.py where xxx stands for your module'name, putting it in folder federatedm/param/.
-   The class object define it xxx_param.py should inherit the BaseParam class that define in federatedml/param/base_param.py
+   The class object defined in xxx_param.py should inherit the BaseParam class that define in federatedml/param/base_param.py
 
 b. __init__ of your parameter class should specify all parameters that the module use.
 
@@ -254,4 +254,4 @@ In this step, two config files corresponding to dsl config file and component co
 #### 3. Check log files
 Now you can check out the log in the following path: ${your_install_path}/logs/{your jobid}.
 
-For more detail information about dsl configure file and parameter configure files, please check out [example doc here](../examples/federatedml-1.0-examples)
+For more detail information about dsl configure file and parameter configure files, please check out [example doc here](../examples/federatedml-1.x-examples)
