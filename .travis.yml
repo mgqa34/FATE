@@ -16,10 +16,6 @@ matrix:
       language: python
       python: 3.6
 
-before_install:
-  - git submodule init
-  - git submodule update
-
 install:
   - |
     export PATH="/usr/lib/ccache:$PATH"
@@ -36,6 +32,8 @@ install:
 before script:
   - export PYTHONPATH=$PYTHONPATH:$HOME
 script:
+  - git submodule init
+  - git submodule update
   - nosetests --with-coverage -w federatedml -m="(?:\b|_)test.py"
 after_success:
   - codecov -t 8765aaaf-817b-44e1-a23e-e1dce50e1b29
