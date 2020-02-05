@@ -37,6 +37,8 @@ script:
   -  echo "[INFO] Git clone eggroll submodule source code from ${eggroll_git_url} branch ${eggroll_git_branch}"
   -  git clone ${eggroll_git_url} -b ${eggroll_git_branch} eggroll
   -  echo $(pwd)
-  - sh federatedml/test/run_test.sh
+  - nohup python fate_flow/fate_flow_client.py > fate_flow_start.log &
+  - cat fate_flow_start.log
+  - nosetests --with-coverage -w federatedml -m="(?:\b|_)test.py"
 after_success:
   - codecov -t 8765aaaf-817b-44e1-a23e-e1dce50e1b29
