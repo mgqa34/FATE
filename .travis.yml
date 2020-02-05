@@ -35,10 +35,7 @@ script:
   -  eggroll_git_url=`grep -A 3 '"eggroll"' .gitmodules | grep 'url' | awk -F '= ' '{print $2}'`
   -  eggroll_git_branch=`grep -A 3 '"eggroll"' .gitmodules | grep 'branch' | awk -F '= ' '{print $2}'`
   -  echo "[INFO] Git clone eggroll submodule source code from ${eggroll_git_url} branch ${eggroll_git_branch}"
-  - git submodule foreach -q --recursive \
-    'branch="$(git config -f $toplevel/.gitmodules submodule.$name.branch)"; \
-     [ "$branch" = "" ] && \
-     git checkout master || git checkout $branch' –
+  -  git clone ${eggroll_git_url} -b ${eggroll_git_branch} eggroll
   - nosetests --with-coverage -w federatedml -m="(?:\b|_)test.py"
 after_success:
   - codecov -t 8765aaaf-817b-44e1-a23e-e1dce50e1b29
