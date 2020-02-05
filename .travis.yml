@@ -16,6 +16,10 @@ matrix:
       language: python
       python: 3.6
 
+before_install:
+  - git submodule init
+  - git submodule update
+
 install:
   - |
     export PATH="/usr/lib/ccache:$PATH"
