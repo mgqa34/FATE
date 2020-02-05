@@ -32,8 +32,31 @@ install:
 before script:
   - export PYTHONPATH=$PYTHONPATH:$HOME
 script:
-  - git submodule init
-  - git submodule update
+  -  eggroll_git_url=`grep -A 3 '"eggroll"' .gitmodules | grep 'url' | awk -F '= ' '{print $2}'`
+  -  eggroll_git_branch=`grep -A 3 '"eggroll"' .gitmodules | grep 'branch' | awk -F '= ' '{print $2}'`
+  -  echo "[INFO] Git clone eggroll submodule source code from ${eggroll_git_url} branch ${eggroll_git_branch}"
+  if [[ -e "eggroll" ]];then
+    while [[ true ]];do
+        read -p "The eggroll directory already exists, delete and re-download? [y/n] " input
+        case ${input} in
+        [yY]*)
+                echo "[INFO] Delete the original eggroll"
+                rm -rf eggroll
+                git clone ${eggroll_git_url} -b ${eggroll_git_branch} eggroll
+                break
+                ;;
+        [nN]*)
+                echo "[INFO] Use the original eggroll"
+                break
+                ;;
+        *)
+                echo "Just enter y or n, please."
+                ;;
+        esac
+    done
+  else
+    git clone ${eggroll_git_url} -b ${eggroll_git_branch} eggroll
+  fi
   - nosetests --with-coverage -w federatedml -m="(?:\b|_)test.py"
 after_success:
   - codecov -t 8765aaaf-817b-44e1-a23e-e1dce50e1b29
