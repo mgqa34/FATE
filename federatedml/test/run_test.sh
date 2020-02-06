@@ -18,11 +18,18 @@
 
 cd $(dirname "$0")
 cur_dir=$(pwd)
+first_test=1
 
 run_test() {
     file=$1
     echo "start to run test "$file
-    coverage run -a $file
+    if [ $first_test == 1 ]; then
+		coverage run $file
+	else
+		coverage run -a $file
+	fi
+
+	first_test=0
 }
 
 traverse_folder() {
