@@ -22,7 +22,7 @@ cur_dir=$(pwd)
 run_test() {
     file=$1
     echo "start to run test "$file
-    python $file
+    coverage run -a $file
 }
 
 traverse_folder() {
