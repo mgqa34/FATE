@@ -47,7 +47,7 @@ script:
       coverage run -a $file
     }
 
-    traverse_folder() {
+  - traverse_folder() {
       for file in $(ls ${1});
       do
         file_fullname=$1/$file
@@ -58,6 +58,6 @@ script:
         fi
       done
     }
-    traverse_folder $cur_dir/..
+  - traverse_folder $cur_dir/..
 after_success:
   - codecov -t 8765aaaf-817b-44e1-a23e-e1dce50e1b29
