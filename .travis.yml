@@ -30,7 +30,8 @@ install:
     pip install nose
     pip install sphinx
 before script:
-  - export PYTHONPATH=$PYTHONPATH:$HOME
+  - cur_dir=$(pwd)
+  - export PYTHONPATH=$PYTHONPATH:$cur_dir
 script:
   - eggroll_git_url=`grep -A 3 '"eggroll"' .gitmodules | grep 'url' | awk -F '= ' '{print $2}'`
   - eggroll_git_branch=`grep -A 3 '"eggroll"' .gitmodules | grep 'branch' | awk -F '= ' '{print $2}'`
