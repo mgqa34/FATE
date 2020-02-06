@@ -39,7 +39,7 @@ script:
   - git clone ${eggroll_git_url} -b ${eggroll_git_branch} eggroll
   - echo $(ls)
   - echo $PYTHONPATH
-  - nohup python fate_flow/fate_flow_client.py > fate_flow_start.log &
+  - nohup python fate_flow/fate_flow_server.py > fate_flow_start.log &
   - cat fate_flow_start.log
   - fate_flow_proc=$(ps aux | grep fate_flow_server.py) 
   - echo ${fate_flow_proc}
