@@ -46,7 +46,8 @@ class TestSplitInfo(unittest.TestCase):
                               sum_grad=2333, sum_hess=23333, gain=233333)
         for key in param_dict:
             self.assertTrue(param_dict[key] == getattr(splitinfo, key))
-  
+ 
+        assert 1 == 2
 
 if __name__ == '__main__':
     unittest.main()
