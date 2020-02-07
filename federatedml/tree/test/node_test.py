@@ -47,7 +47,6 @@ class TestSplitInfo(unittest.TestCase):
         for key in param_dict:
             self.assertTrue(param_dict[key] == getattr(splitinfo, key))
  
-        assert 1 == 2
 
 if __name__ == '__main__':
     unittest.main()
