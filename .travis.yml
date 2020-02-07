@@ -43,9 +43,6 @@ script:
   - cat fate_flow_start.log
   - fate_flow_proc=$(ps aux | grep fate_flow_server.py) 
   - echo ${fate_flow_proc}
-  - bash ./federatedml/test/run_test.sh > unittest.log >> 2&1
-  - error_count=$(cat test.log | grep FAILED | wc -l)
-  - cat unittest.log 
-  - error_count || travis_terminate 1;
+  - bash ./federatedml/test/run_test.sh || travis_terminate 1;
 after_success:
   - cd ./federatedml/test && codecov -t 8765aaaf-817b-44e1-a23e-e1dce50e1b29
