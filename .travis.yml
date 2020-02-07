@@ -37,7 +37,6 @@ script:
   - eggroll_git_branch=`grep -A 3 '"eggroll"' .gitmodules | grep 'branch' | awk -F '= ' '{print $2}'`
   - echo "[INFO] Git clone eggroll submodule source code from ${eggroll_git_url} branch ${eggroll_git_branch}"
   - git clone ${eggroll_git_url} -b ${eggroll_git_branch} eggroll
-  - echo $PYTHONPATH
   - nohup python fate_flow/fate_flow_server.py > fate_flow_start.log &
   - cat fate_flow_start.log
   - fate_flow_proc=$(ps aux | grep fate_flow_server.py) 
