@@ -40,9 +40,9 @@ script:
   - nohup python fate_flow/fate_flow_server.py > fate_flow_start.log &
   - cat fate_flow_start.log
   - fate_flow_proc=$(ps aux | grep fate_flow_server.py) 
-  - bash ./federatedml/test/run_test.sh
-  - echo $?
-  - if [ $? -gt 0 ]; then
+  - err=$(bash ./federatedml/test/run_test.sh)
+  - echo $err
+  - if [ $err -gt 0 ]; then
         exit 1;
     fi
 
