@@ -40,6 +40,6 @@ script:
   - nohup python fate_flow/fate_flow_server.py > fate_flow_start.log &
   - cat fate_flow_start.log
   - fate_flow_proc=$(ps aux | grep fate_flow_server.py) 
-  - bash ./federatedml/test/run_test.sh && exit 1 || echo "Test Successfully"
+  - bash ./federatedml/test/run_test.sh && travis_terminate || echo "Test Successfully"
 after_success:
   - cd ./federatedml/test && codecov -t 8765aaaf-817b-44e1-a23e-e1dce50e1b29
