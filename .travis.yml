@@ -42,7 +42,7 @@ script:
   - fate_flow_proc=$(ps aux | grep fate_flow_server.py) 
   - bash ./federatedml/test/run_test.sh
   - if [ $? -gt 0 ]; then
-        exit 1
+        exit 1;
     fi
 
 after_success:
