@@ -61,7 +61,7 @@ class Node(object):
             Name of the site that the node belongs to.
         fid : int, optional
             ID of the feature that the node splits on.
-        fval : float or int, optional
+        bid : float or int, optional
             Feature value that the node splits on.
         weight : float, optional
             Weight of the node.
@@ -86,14 +86,14 @@ class Node(object):
     """
 
     def __init__(self, nid=None, sitename=None, fid=None,
-                 fval=None, weight=0, is_leaf=False, grad=None,
+                 bid=None, weight=0, is_leaf=False, grad=None,
                  hess=None, l=-1, r=-1,
                  missing_dir=1, sample_num=0, is_left_node=False, sibling_nodeid=None, parent_nodeid=None, inst_indices=None):
         
         self.nid = nid
         self.sitename = sitename
         self.fid = fid
-        self.fval = fval
+        self.bid = bid
         self.weight = weight
         self.is_leaf = is_leaf
         self.grad = grad
