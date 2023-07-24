@@ -334,6 +334,9 @@ class DataFrame(object):
 
     def __eq__(self, other) -> "DataFrame":
         return self.__cmp_operate(operator.eq, other)
+    
+    def __ne__(self, other) -> "DataFrame":
+        return self.__cmp_operate(operator.ne, other)
 
     def __invert__(self):
         from .ops._unary_operator import invert
