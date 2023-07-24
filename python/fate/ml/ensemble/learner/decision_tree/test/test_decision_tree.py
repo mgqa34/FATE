@@ -59,5 +59,5 @@ if __name__ == '__main__':
     loss_bce.compute_hess(empty_gh, label, predict)
 
 
-    tree = HeteroDecisionTreeGuest(10)
+    tree = HeteroDecisionTreeGuest(3)
     ret = tree.booster_fit(ctx, bin_data, empty_gh, a)

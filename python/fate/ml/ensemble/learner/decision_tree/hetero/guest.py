@@ -185,6 +185,25 @@ class HeteroDecisionTreeGuest(DecisionTree):
                 self._nodes.append(node)
 
         return cur_layer_node, sample_pos
+    
+    def get_nodes(self):
+        return self._nodes
+
+    def print_tree(self):
+        nodes = self._nodes
+        def print_node(node, indent="", position="root"):
+            if node is not None:
+                info_str = "(Node_id: " + str(node.nid)
+                if node.is_leaf:
+                    info_str += ", weight: " + str(node.weight)
+                    info_str += " leaf)"
+                else:
+                    info_str += ")"
+                print(indent, node.nid if position=="root" else position, info_str)
+                if not node.is_leaf:
+                    print_node(next((n for n in nodes if n.nid == node.l), None), indent + "     ", "left")
+                    print_node(next((n for n in nodes if n.nid == node.r), None), indent + "     ", "right")
+        print_node(nodes[0])
 
     def fit(self, ctx: Context, train_data: DataFrame):
         pass
