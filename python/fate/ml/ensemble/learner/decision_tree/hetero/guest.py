@@ -29,13 +29,13 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-FIX_POINT_PRECISION = 2**52
+FIX_POINT_PRECISION = 52
 
 
 class HeteroDecisionTreeGuest(DecisionTree):
 
     def __init__(self, max_depth=3, valid_features=None, use_missing=False, zero_as_missing=False, goss=False, l1=0.1, l2=0, 
-                 min_impurity_split=1e-2, min_sample_split=2, min_leaf_node=1, min_child_weight=1, gh_pack=False, objective=None):
+                 min_impurity_split=1e-2, min_sample_split=2, min_leaf_node=1, min_child_weight=1, gh_pack=True, objective=None):
 
         super().__init__(max_depth, use_missing=use_missing, zero_as_missing=zero_as_missing, valid_features=valid_features)
         self.host_sitenames = None
@@ -147,11 +147,13 @@ class HeteroDecisionTreeGuest(DecisionTree):
         
         en_grad_hess = grad_and_hess.create_frame()
 
-        def make_long_tensor(s: pd.Series, coder, pk, encryptor, offset=0, pack_num=2, shift_bit=52):
-            gh = t.LongTensor([int((s['g']+offset)*FIX_POINT_PRECISION), int(s['h']*FIX_POINT_PRECISION)])
-            pack_vec = coder.pack_vec(gh, num_shift_bit=shift_bit, num_elem_each_pack=pack_num)
+        def make_long_tensor(s: pd.Series, coder, pk, offset, shift_bit, precision, encryptor, pack_num=2):
+            pack_tensor = t.Tensor(s.values)
+            pack_tensor[0] = pack_tensor[0] + offset
+            pack_vec = coder.pack_floats(pack_tensor, shift_bit, pack_num, precision)
             en = pk.encrypt_encoded(pack_vec, obfuscate=True)
-            return encryptor.lift(en, (len(en), 1), t.long, gh.device)
+            ret = encryptor.lift(en, (len(en), 1), pack_tensor.dtype, pack_tensor.device)
+            return ret
 
         def compute_offset_bit(sample_num, g_max, h_max):
             g_bit = int(np.log2(FIX_POINT_PRECISION * sample_num * g_max) + 1) # add 1 more bit for safety
@@ -173,9 +175,8 @@ class HeteroDecisionTreeGuest(DecisionTree):
                 self._h_abs_max = 2
 
             shift_bit = compute_offset_bit(len(grad_and_hess), self._g_abs_max, self._h_abs_max)
-            
             partial_func = functools.partial(make_long_tensor, coder=self._coder, offset=self._g_offset, pk=self._pk,
-                                             shift_bit=shift_bit, pack_num=2, encryptor=self._encryptor)
+                                             shift_bit=shift_bit, pack_num=2, precision=FIX_POINT_PRECISION, encryptor=self._encryptor)
             
             en_grad_hess['gh'] = grad_and_hess.apply_row(partial_func)
         else:
