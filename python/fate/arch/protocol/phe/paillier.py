@@ -371,12 +371,14 @@ class evaluator(TensorEvaluator[EV, V, PK, Coder]):
 
 
 def test_pack_float():
-    offset_bit = 32
-    precision = 16
+    offset_bit = 63
+    precision = 52
     coder = Coder(_Coder())
-    vec = torch.tensor([0.1, 0.2, 0.3, 0.4, 0.5])
+    vec = torch.tensor([1.5, 0.25])
     packed = coder.pack_floats(vec, offset_bit, 2, precision)
+    print(packed)
     unpacked = coder.unpack_floats(packed, offset_bit, 2, precision, 5)
+    print(unpacked)
     assert torch.allclose(vec, unpacked, rtol=1e-3, atol=1e-3)
 
 

@@ -29,7 +29,7 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-FIX_POINT_PRECISION = 52
+FIX_POINT_PRECISION = 31
 
 
 class HeteroDecisionTreeGuest(DecisionTree):
@@ -156,8 +156,8 @@ class HeteroDecisionTreeGuest(DecisionTree):
             return ret
 
         def compute_offset_bit(sample_num, g_max, h_max):
-            g_bit = int(np.log2(FIX_POINT_PRECISION * sample_num * g_max) + 1) # add 1 more bit for safety
-            h_bit = int(np.log2(FIX_POINT_PRECISION * sample_num * h_max) + 1) 
+            g_bit = int(np.log2(2**FIX_POINT_PRECISION * sample_num * g_max) + 1) # add 1 more bit for safety
+            h_bit = int(np.log2(2**FIX_POINT_PRECISION * sample_num * h_max) + 1) 
             return max(g_bit, h_bit)
 
         if self._gh_pack:
@@ -177,7 +177,6 @@ class HeteroDecisionTreeGuest(DecisionTree):
             shift_bit = compute_offset_bit(len(grad_and_hess), self._g_abs_max, self._h_abs_max)
             partial_func = functools.partial(make_long_tensor, coder=self._coder, offset=self._g_offset, pk=self._pk,
                                              shift_bit=shift_bit, pack_num=2, precision=FIX_POINT_PRECISION, encryptor=self._encryptor)
-            
             en_grad_hess['gh'] = grad_and_hess.apply_row(partial_func)
         else:
             en_grad_hess['g'] = self._encryptor.encrypt_tensor(grad_and_hess['g'].as_tensor())
