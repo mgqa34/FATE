@@ -74,6 +74,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
         if gh_pack:
             if objective is None:
                 raise ValueError('objective must be specified when gh_pack is True')
+        self._pack_info = {}
 
 
     def set_encrypt_kit(self, kit):
@@ -173,11 +174,17 @@ class HeteroDecisionTreeGuest(DecisionTree):
                 self._g_abs_max = abs(float(grad_and_hess['g'].max()['g'])) + self._g_offset
                 self._h_abs_max = 2
 
+            pack_num, total_num = 2, 2
             shift_bit = compute_offset_bit(len(grad_and_hess), self._g_abs_max, self._h_abs_max)
-            print(shift_bit, 'cwj shift bit')
             partial_func = functools.partial(make_long_tensor, coder=self._coder, offset=self._g_offset, pk=self._pk,
                                              shift_bit=shift_bit, pack_num=2, precision=FIX_POINT_PRECISION, encryptor=self._encryptor)
             en_grad_hess['gh'] = grad_and_hess.apply_row(partial_func)
+
+            # record pack info
+            self._pack_info['shift_bit'] = shift_bit
+            self._pack_info['precision'] = FIX_POINT_PRECISION
+            self._pack_info['pack_num'] = pack_num
+            self._pack_info['total_num'] = total_num
         else:
             en_grad_hess['g'] = self._encryptor.encrypt_tensor(grad_and_hess['g'].as_tensor())
             en_grad_hess['h'] = self._encryptor.encrypt_tensor(grad_and_hess['h'].as_tensor())
@@ -259,7 +266,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
             # compute histogram
             hist_inst, statistic_result = self.hist_builder.compute_hist(sub_ctx, cur_layer_node, train_df, grad_and_hess, sample_pos, node_map)
             # compute best splits
-            split_info = self.splitter.split(sub_ctx, statistic_result, cur_layer_node, node_map, self._sk, self._coder, self._gh_pack)
+            split_info = self.splitter.split(sub_ctx, statistic_result, cur_layer_node, node_map, self._sk, self._coder, self._gh_pack, self._pack_info)
             # update tree with best splits
             next_layer_nodes = self._update_tree(sub_ctx, cur_layer_node, split_info, train_df)
             # update feature importance
