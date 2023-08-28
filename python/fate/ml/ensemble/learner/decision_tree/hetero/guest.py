@@ -29,8 +29,7 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-FIX_POINT_PRECISION = 31
-
+FIX_POINT_PRECISION = 52
 
 class HeteroDecisionTreeGuest(DecisionTree):
 
@@ -175,6 +174,7 @@ class HeteroDecisionTreeGuest(DecisionTree):
                 self._h_abs_max = 2
 
             shift_bit = compute_offset_bit(len(grad_and_hess), self._g_abs_max, self._h_abs_max)
+            print(shift_bit, 'cwj shift bit')
             partial_func = functools.partial(make_long_tensor, coder=self._coder, offset=self._g_offset, pk=self._pk,
                                              shift_bit=shift_bit, pack_num=2, precision=FIX_POINT_PRECISION, encryptor=self._encryptor)
             en_grad_hess['gh'] = grad_and_hess.apply_row(partial_func)

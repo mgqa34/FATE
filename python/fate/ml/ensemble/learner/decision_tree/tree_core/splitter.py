@@ -483,6 +483,7 @@ class FedSBTSplitter(object):
     def _recover_pack_split(self, hist, schema):
         print('schema is {}'.format(schema))
         host_hist = hist.decrypt(schema[0], schema[1])
+        # host_hist = hist.decode(schema[0], schema[1])
         return host_hist
     
     def _guest_split(self, ctx: Context, stat_rs, cur_layer_node, node_map, sk, coder, gh_pack):
@@ -509,6 +510,8 @@ class FedSBTSplitter(object):
             host_sitename = ctx.hosts[idx].party[0] + '_' + ctx.hosts[idx].party[1]
             host_hist = self._recover_pack_split(hist, decrypt_schema)
             print(host_hist)
+            c = coder.unpack_floats(host_hist, 63, 2, 52, 2)
+            # coder.unpack_floats(host_hist, )
             raise ValueError('cwj debug')
             logger.debug('splitting host')
             host_split = self._find_best_splits(host_hist, host_sitename, cur_layer_node, reverse_node_map, recover_bucket=False)
