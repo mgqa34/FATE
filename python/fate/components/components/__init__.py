@@ -145,6 +145,12 @@ class LazyBuildInComponentsLoader:
         return data_split
 
     @_lazy_cpn
+    def feature_imputation(self):
+        from .feature_imputation import feature_imputation
+
+        return feature_imputation
+
+    @_lazy_cpn
     def toy_example(self):
         from .toy_example import toy_example
 

@@ -13,5 +13,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from .feature_imputation import FeatureImputation
 from .feature_scale import FeatureScale
 from .union import Union
