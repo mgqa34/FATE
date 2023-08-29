@@ -15,7 +15,6 @@
 import logging
 
 import pandas as pd
-import torch
 
 from fate.arch import Context
 from ..abc.module import Module
@@ -79,9 +78,12 @@ class FeatureImputation(Module):
             elif method == "const":
                 test_data[cols] = to_compute_data[cols].fillna(self._consts)
             elif method == "random":
-                # fill by random value per entry?
-                fill_val = torch.randn(len(cols))
-                test_data[cols] = to_compute_data[cols].fillna(fill_val)
+                # @todo: fill by random value per entry
+                pass
+                # fill_val = torch.randn(len(cols))
+                # fill_df = torch.randn(to_compute_df.shape)
+                # test_data[cols] = to_compute_data[cols].fillna(fill_df)
+                # test_data[cols] = to_compute_data[cols].apply(lambda x: random.random() if x is None else x)
         return test_data
 
     def get_model(self):
